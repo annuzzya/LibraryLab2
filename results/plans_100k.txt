@@ -1,0 +1,146 @@
+PostgreSQL, R2:
+
+Subquery Scan on x  (cost=4894.74..5227.80 rows=20 width=101) (actual time=35.233..35.688 rows=20.00 loops=1)
+  Buffers: shared hit=3343 read=1521 dirtied=47
+  ->  Limit  (cost=4894.74..4894.79 rows=20 width=69) (actual time=35.194..35.197 rows=20.00 loops=1)
+        Buffers: shared hit=3251 read=1473 dirtied=45
+        ->  Sort  (cost=4894.74..4894.91 rows=67 width=69) (actual time=35.193..35.195 rows=20.00 loops=1)
+              Sort Key: (((b.rating_sum)::numeric / (NULLIF(b.rating_count, 0))::numeric)) DESC NULLS LAST
+              Sort Method: top-N heapsort  Memory: 27kB
+              Buffers: shared hit=3251 read=1473 dirtied=45
+              ->  Nested Loop  (cost=3468.32..4892.96 rows=67 width=69) (actual time=18.962..35.062 rows=61.00 loops=1)
+                    Join Filter: (b.book_id = bg.book_id)
+                    Buffers: shared hit=3251 read=1473 dirtied=45
+                    ->  Hash Join  (cost=3468.03..3696.24 rows=762 width=8) (actual time=18.129..21.839 rows=639.00 loops=1)
+                          Hash Cond: (c.book_id = bg.book_id)
+                          Buffers: shared hit=2064 read=743 dirtied=3
+                          ->  HashAggregate  (cost=2588.95..2741.03 rows=15208 width=4) (actual time=15.528..17.111 rows=15284.00 loops=1)
+                                Group Key: c.book_id
+                                Batches: 1  Memory Usage: 1049kB
+                                Buffers: shared hit=2058 read=14
+                                ->  Bitmap Heap Scan on book_copies c  (cost=234.22..2546.56 rows=16956 width=4) (actual time=0.741..11.257 rows=17185.00 loops=1)
+                                      Recheck Cond: ((branch_id = '1'::smallint) AND ((status)::text = 'available'::text))
+                                      Heap Blocks: exact=2055
+                                      Buffers: shared hit=2058 read=14
+                                      ->  Bitmap Index Scan on ix_copies_branch_status  (cost=0.00..229.98 rows=16956 width=0) (actual time=0.541..0.541 rows=17222.00 loops=1)
+                                            Index Cond: ((branch_id = '1'::smallint) AND ((status)::text = 'available'::text))
+                                            Index Searches: 1
+                                            Buffers: shared hit=3 read=14
+                          ->  Hash  (cost=829.55..829.55 rows=3963 width=4) (actual time=2.589..2.589 rows=4073.00 loops=1)
+                                Buckets: 4096  Batches: 1  Memory Usage: 176kB
+                                Buffers: shared hit=6 read=729 dirtied=3
+                                ->  Bitmap Heap Scan on book_genres bg  (cost=47.01..829.55 rows=3963 width=4) (actual time=0.426..2.148 rows=4073.00 loops=1)
+                                      Recheck Cond: (genre_id = '1'::smallint)
+                                      Heap Blocks: exact=730
+                                      Buffers: shared hit=6 read=729 dirtied=3
+                                      ->  Bitmap Index Scan on ix_book_genres_genre  (cost=0.00..46.02 rows=3963 width=0) (actual time=0.314..0.314 rows=4073.00 loops=1)
+                                            Index Cond: (genre_id = '1'::smallint)
+                                            Index Searches: 1
+                                            Buffers: shared hit=2 read=3
+                    ->  Index Scan using books_pkey on books b  (cost=0.29..1.56 rows=1 width=45) (actual time=0.020..0.020 rows=0.10 loops=639)
+                          Index Cond: (book_id = c.book_id)
+                          Filter: ((publish_year >= '1990'::smallint) AND (publish_year <= '2000'::smallint) AND ((language)::text = 'uk'::text))
+                          Rows Removed by Filter: 1
+                          Index Searches: 639
+                          Buffers: shared hit=1187 read=730 dirtied=42
+  SubPlan 1
+    ->  Aggregate  (cost=16.64..16.65 rows=1 width=32) (actual time=0.024..0.024 rows=1.00 loops=20)
+          Buffers: shared hit=92 read=48 dirtied=2
+          ->  Sort  (cost=16.63..16.63 rows=1 width=25) (actual time=0.023..0.023 rows=1.30 loops=20)
+                Sort Key: ba.author_order
+                Sort Method: quicksort  Memory: 25kB
+                Buffers: shared hit=92 read=48 dirtied=2
+                ->  Nested Loop  (cost=0.58..16.62 rows=1 width=25) (actual time=0.022..0.022 rows=1.30 loops=20)
+                      Buffers: shared hit=92 read=48 dirtied=2
+                      ->  Index Scan using book_authors_pkey on book_authors ba  (cost=0.29..8.31 rows=1 width=6) (actual time=0.008..0.008 rows=1.30 loops=20)
+                            Index Cond: (book_id = x.book_id)
+                            Index Searches: 20
+                            Buffers: shared hit=19 read=41
+                      ->  Index Scan using authors_pkey on authors a  (cost=0.29..8.30 rows=1 width=27) (actual time=0.011..0.011 rows=1.00 loops=26)
+                            Index Cond: (author_id = ba.author_id)
+                            Index Searches: 26
+                            Buffers: shared hit=72 read=7 dirtied=1
+Planning:
+  Buffers: shared hit=57 read=10 dirtied=3
+Planning Time: 4.821 ms
+Execution Time: 35.825 ms
+
+PostgreSQL, R5:
+
+Limit  (cost=0.43..83.98 rows=20 width=68) (actual time=0.032..0.164 rows=20.00 loops=1)
+  Buffers: shared hit=11 read=12
+  ->  Index Scan using ix_events_member_ts on reader_events  (cost=0.43..104.86 rows=25 width=68) (actual time=0.031..0.162 rows=20.00 loops=1)
+        Index Cond: (member_id = '1'::smallint)
+        Index Searches: 1
+        Buffers: shared hit=11 read=12
+Planning Time: 0.084 ms
+Execution Time: 0.176 ms
+
+MongoDB, R2 (winningPlan):
+
+{
+  "isCached": false,
+  "stage": "SORT",
+  "sortPattern": {
+    "rating.avg": -1
+  },
+  "memLimit": 104857600,
+  "limitAmount": 20,
+  "type": "simple",
+  "inputStage": {
+    "stage": "FETCH",
+    "filter": {
+      "copies": {
+        "$elemMatch": {
+          "$and": [
+            {
+              "branch.id": {
+                "$eq": 1
+              }
+            },
+            {
+              "status": {
+                "$eq": "available"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "inputStage": {
+      "stage": "IXSCAN",
+      "keyPattern": {
+        "genres.id": 1,
+        "language": 1,
+        "publish_year": 1
+      },
+      "indexName": "ix_genre_language_year",
+      "isMultiKey": true,
+      "multiKeyPaths": {
+        "genres.id": [
+          "genres"
+        ],
+        "language": [],
+        "publish_year": []
+      },
+      "isUnique": false,
+      "isSparse": false,
+      "isPartial": false,
+      "indexVersion": 2,
+      "direction": "forward",
+      "indexBounds": {
+        "genres.id": [
+          "[1, 1]"
+        ],
+        "language": [
+          "[\"uk\", \"uk\"]"
+        ],
+        "publish_year": [
+          "[1990, 2000]"
+        ]
+      }
+    }
+  }
+}
+
+totalDocsExamined=355, totalKeysExamined=355, nReturned=20

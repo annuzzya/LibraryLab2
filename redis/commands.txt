@@ -1,0 +1,45 @@
+PING
+
+SET lib:book:1 "{\"title\":\"Кобзар\",\"author\":\"Тарас Шевченко\"}" EX 300
+GET lib:book:1
+TTL lib:book:1
+EXISTS lib:book:1
+DEL lib:book:1
+
+HSET lib:session:abc member_id 42 name "Анна Петренко" branch_id 1
+EXPIRE lib:session:abc 1800
+HGET lib:session:abc name
+HGETALL lib:session:abc
+HINCRBY lib:session:abc requests 1
+
+INCR lib:views:book:1
+INCRBY lib:views:book:1 10
+GET lib:views:book:1
+
+ZINCRBY lib:top:views 5 book:1
+ZINCRBY lib:top:views 12 book:2
+ZINCRBY lib:top:views 3 book:3
+ZREVRANGE lib:top:views 0 9 WITHSCORES
+ZSCORE lib:top:views book:2
+ZREVRANK lib:top:views book:1
+
+RPUSH lib:notify:42 "Книга чекає на вас" "Термін повернення спливає завтра"
+LRANGE lib:notify:42 0 -1
+LPOP lib:notify:42
+LLEN lib:notify:42
+
+SADD lib:fav:42 Роман Детектив Історія
+SADD lib:fav:77 Історія Фентезі
+SINTER lib:fav:42 lib:fav:77
+SUNION lib:fav:42 lib:fav:77
+SISMEMBER lib:fav:42 Роман
+
+SET lib:stock:book:5 1
+WATCH lib:stock:book:5
+MULTI
+DECR lib:stock:book:5
+SADD lib:holds:book:5 42
+EXEC
+
+KEYS lib:*
+FLUSHDB
